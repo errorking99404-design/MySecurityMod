@@ -24,7 +24,7 @@ jobs:
           zip -r ../../MySecurityMod.jar .
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SecurityModJar
           path: MySecurityMod.jar
