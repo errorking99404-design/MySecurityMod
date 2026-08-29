@@ -1,24 +1,29 @@
-name: Build Fabric Mod
+name: Build Mod
 
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-running: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 17
+
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build Mod
+
+      - name: Compile and Package
         run: |
           mkdir -p build/classes
-          javac -cp "libs/*" -d build/classes com/serversecurity/*.java
+          find com -name "*.java" > sources.txt
+          javac -d build/classes @sources.txt
+          cp fabric.mod.json build/classes/ 2>/dev/null || true
           cd build/classes
           zip -r ../../MySecurityMod.jar .
-      - name: Upload Mod Jar
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: SecurityModJar
