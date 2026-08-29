@@ -14,17 +14,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Compile and Package
+      - name: Build with Gradle
         run: |
-          mkdir -p build/classes
-          find com -name "*.java" > sources.txt
-          javac -d build/classes @sources.txt
-          cp fabric.mod.json build/classes/ 2>/dev/null || true
-          cd build/classes
-          zip -r ../../MySecurityMod.jar .
+          chmod +x ./gradlew
+          ./gradlew build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SecurityModJar
-          path: MySecurityMod.jar
+          path: build/libs/*.jar
