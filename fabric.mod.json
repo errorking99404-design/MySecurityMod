@@ -1,0 +1,17 @@
+
+  "schemaVersion": 1,
+  "id": "antixray_antiop",
+  "version": "1.0.0",
+  "name": "Anti-Xray and Anti-OP Guard",
+  "description": "Integrated security mod for server protection.",
+  "environment": "server",
+  "entrypoints": {
+    "server": [
+      "com.serversecurity.MainMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "~1.20"
+  }
+}
