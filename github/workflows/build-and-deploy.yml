@@ -1,0 +1,52 @@
+name: Build, package and optional deploy
+
+on:
+  workflow_dispatch: # يضيف زر "Run workflow" للتشغيل اليدوي
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Make gradlew executable
+      run: chmod +x gradlew || true
+
+    - name: Build (Gradle) - skip tests for speed
+      run: ./gradlew clean build -x test
+
+    - name: Collect JARs
+      run: |
+        mkdir -p artifacts
+        find . -type f -name "*.jar" -not -path "./.gradle/*" -exec cp {} artifacts/ \;
+        ls -la artifacts
+
+    - name: Zip artifacts
+      run: zip -r release-artifacts.zip artifacts
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: release-artifacts.zip
+
+    - name: Deploy to server via SCP (optional)
+      if: ${{ secrets.SERVER_HOST != '' }}
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        port: ${{ secrets.SERVER_PORT || '22' }}
+        key: ${{ secrets.SERVER_PRIVATE_KEY }}
+        source: "release-artifacts.zip"
+        target: ${{ secrets.SERVER_TARGET_PATH }}
