@@ -41,12 +41,13 @@ jobs:
         path: release-artifacts.zip
 
     - name: Deploy to server via SCP (optional)
-      if: ${{ secrets.SERVER_HOST != '' }}
+      if: ${{ secrets.SERVER_HOST }}
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
-        port: ${{ secrets.SERVER_PORT || '22' }}
+        # Optional: set SERVER_PORT secret to override the default port (usually 22)
+        port: ${{ secrets.SERVER_PORT }}
         key: ${{ secrets.SERVER_PRIVATE_KEY }}
         source: "release-artifacts.zip"
         target: ${{ secrets.SERVER_TARGET_PATH }}
