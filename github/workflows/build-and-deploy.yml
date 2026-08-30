@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
     - name: Checkout
@@ -19,20 +20,42 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Make gradlew executable
-      run: chmod +x gradlew || true
+    - name: Inspect repo and gradle wrapper
+      run: |
+        echo "Workspace: $(pwd)"
+        echo "Listing top-level files:"
+        ls -la
+        if [ -f ./gradlew ]; then
+          echo "gradlew found"
+          chmod +x ./gradlew || true
+        else
+          echo "gradlew NOT found — will try system 'gradle' if available"
+        fi
 
     - name: Build (Gradle) - skip tests for speed
-      run: ./gradlew clean build -x test
+      run: |
+        if [ -x ./gradlew ]; then
+          echo "Using ./gradlew"
+          ./gradlew clean build -x test
+        else
+          echo "Using system gradle (you should add a Gradle wrapper to the repo)"
+          gradle clean build -x test
+        fi
 
     - name: Collect JARs
       run: |
         mkdir -p artifacts
-        find . -type f -name "*.jar" -not -path "./.gradle/*" -exec cp {} artifacts/ \;
-        ls -la artifacts
+        # Prefer build/libs but also find any other jars (exclude .gradle and .m2)
+        find . -path "./.gradle" -prune -o -path "./**/.m2" -prune -o -type f -name "*.jar" -print -exec cp {} artifacts/ \;
+        echo "Artifacts collected:" && ls -la artifacts || true
 
     - name: Zip artifacts
-      run: zip -r release-artifacts.zip artifacts
+      run: |
+        if [ -d artifacts ] && [ "$(ls -A artifacts)" ]; then
+          zip -r release-artifacts.zip artifacts
+        else
+          echo "No artifacts found to zip" && touch release-artifacts.zip
+        fi
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -41,12 +64,12 @@ jobs:
         path: release-artifacts.zip
 
     - name: Deploy to server via SCP (optional)
-      if: ${{ secrets.SERVER_HOST }}
+      if: ${{ secrets.SERVER_HOST && secrets.SERVER_USER && secrets.SERVER_PRIVATE_KEY && secrets.SERVER_TARGET_PATH }}
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
-        # Optional: set SERVER_PORT secret to override the default port (usually 22)
+        # If you set SERVER_PORT secret, it will be used; otherwise appleboy defaults to 22
         port: ${{ secrets.SERVER_PORT }}
         key: ${{ secrets.SERVER_PRIVATE_KEY }}
         source: "release-artifacts.zip"
