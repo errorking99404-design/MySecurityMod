@@ -38,6 +38,15 @@ jobs:
           **/build/test-results/test/**/*.xml
           **/target/surefire-reports/*.xml
 
+    - name: Upload Minecraft mod files
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: minecraft-mods
+        path: |
+          **/build/libs/*.jar
+          **/target/*.jar
+
     - name: Show build output on success
       if: success()
       run: echo "Build and tests passed — ✅"
